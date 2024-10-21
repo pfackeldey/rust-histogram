@@ -6,9 +6,9 @@
 
 ```rust
 use hist::hist::Histogram;
-use hist_axes::axis::Axis;
 use hist_axes::uniform::Uniform;
 use hist_axes::variable::Variable;
+use hist_storages::StorageType;
 // stores data in a Vec of axes dimensionality
 use hist_dense::densehist::VecHist as Hist;
 
@@ -20,16 +20,13 @@ use hist_dense::densehist::VecHist as Hist;
 // stores data in a HashMap<usize, f64> for filled (non-zero) bins
 // use hist_sparse::hashmaphist::HashMapHist as Hist;
 
-let uniform = Uniform::new("axis1".to_string(), 0.0, 10.0, 10);
-let variable = Variable::new("axis2".to_string(), vec![0.0, 1.0, 2.0, 3.5, 4.1]);
+let uniform = Uniform::new(10, 0.0, 10.0).unwrap();
+let variable = Variable::new(vec![0.0, 1.0, 2.0, 3.5, 4.1]).unwrap();
 
-let axis1 = Box::new(uniform) as Box<dyn Axis>;
-let axis2 = Box::new(variable) as Box<dyn Axis>;
-
-let mut hist = Hist::new(vec![axis1, axis2]);
+let mut hist = Hist::new(vec![&axis1, &axis2], StorageType::Double);
 
 // fill the histogram
-hist.fill(&[1.0, 1.0], 1.0);
+hist.fill(&[1.0, 1.0], 1.0).unwrap();
 
 println!("{:?}", hist);
 ```

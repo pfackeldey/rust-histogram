@@ -8,5 +8,6 @@ readme = { workspace = true }
 
 [dependencies]
 hist-axes = { workspace = true }
+hist-storages = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }

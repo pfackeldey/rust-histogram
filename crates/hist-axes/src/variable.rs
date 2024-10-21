@@ -1,67 +1,71 @@
 use crate::axis::{Axis, AxisError};
-use crate::bin::Bin;
+use crate::bin::Interval;
 use anyhow::Result;
+use num_traits::{Num, NumCast, NumOps};
 
 #[derive(Debug)]
-pub struct Variable {
-    pub name: String,
-    pub bins: Vec<Bin>,
+pub struct Variable<V = f64> {
+    pub bins: Vec<Interval<V>>,
 }
 
-impl Variable {
-    pub fn new(name: String, edges: Vec<f64>) -> Self {
-        // TODO: add checks
+impl<V> Variable<V>
+where
+    V: PartialOrd + Num + NumCast + Copy + Clone,
+{
+    pub fn new(edges: Vec<V>) -> Result<Self> {
+        if edges.len() < 2 {
+            return Err(AxisError::InvalidNumberOfBinEdges.into());
+        }
+        if !edges.windows(2).all(|w| w[0] < w[1]) {
+            return Err(AxisError::FailedToSortBins.into());
+        }
         let bins = edges
             .windows(2)
-            .map(|w| Bin {
-                low: w[0],
-                high: w[1],
-            })
+            .map(|w| Interval::new(w[0], w[1]))
             .collect();
-        Self { name, bins }
+        Ok(Self { bins })
     }
 }
 
-impl Axis for Variable {
-    fn name(&self) -> &str {
-        &self.name
-    }
+impl<V> Axis for Variable<V>
+where
+    V: PartialOrd + Num + NumCast + NumOps + Copy,
+{
+    type ValueType = V;
+    type BinType = Interval<V>;
 
-    fn bins(&self) -> &Vec<Bin> {
+    fn bins(&self) -> &Vec<Self::BinType> {
         &self.bins
     }
 
-    fn num_bins(&self) -> usize {
+    fn num_bins(&self, flow: bool) -> usize {
+        if flow {
+            // include underflow and overflow bins
+            return self.bins.len() + 2;
+        }
         self.bins.len()
     }
 
-    fn lower_bound(&self) -> f64 {
-        self.bins[0].low
-    }
-
-    fn upper_bound(&self) -> f64 {
-        self.bins[self.bins.len() - 1].high
-    }
-
-    fn index(&self, value: f64) -> Result<usize> {
+    fn index(&self, value: Self::ValueType) -> usize {
         // find index with binary search
         // (this should be eytzinger layout for better cache performance)
-        let mut low = 0;
-        let mut high = self.bins.len() - 1;
-
-        while low <= high {
-            let mid = low + (high - low) / 2;
-            let bin = &self.bins[mid];
-            if value >= bin.low && value < bin.high {
-                return Ok(mid);
-            } else if value < bin.low {
-                high = mid - 1;
-            } else {
-                low = mid + 1;
-            }
+        // bin layout: [bins, underflow, overflow]
+        match value {
+            v if v < self.bins[0].low => self.underflow(),
+            v if v > self.bins[self.bins.len() - 1].high => self.overflow(),
+            _ => self
+                .bins
+                .binary_search_by(|bin| {
+                    if bin.low <= value && value <= bin.high {
+                        std::cmp::Ordering::Equal
+                    } else if bin.low > value {
+                        std::cmp::Ordering::Greater
+                    } else {
+                        std::cmp::Ordering::Less
+                    }
+                })
+                .unwrap(),
         }
-
-        Err(AxisError::FailedToFindBinIndex.into())
     }
 }
 
@@ -70,21 +74,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_variable() {
-        let edges = vec![0.0, 1.0, 2.0, 3.0];
-        let var = Variable::new("test".to_string(), edges);
+    fn test_variable_axis() {
+        let edges: Vec<f64> = vec![0.0, 1.0, 2.0, 3.0];
+        let var = Variable::new(edges).unwrap();
 
-        assert_eq!(var.name(), "test");
-        assert_eq!(var.num_bins(), 3);
-        assert_eq!(var.lower_bound(), 0.0);
-        assert_eq!(var.upper_bound(), 3.0);
+        assert_eq!(var.num_bins(false), 3);
+        assert_eq!(var.num_bins(true), 5);
 
-        assert_eq!(var.index(0.0).unwrap(), 0);
-        assert_eq!(var.index(0.5).unwrap(), 0);
-        assert_eq!(var.index(1.0).unwrap(), 1);
-        assert_eq!(var.index(1.5).unwrap(), 1);
-        assert_eq!(var.index(2.0).unwrap(), 2);
-        assert_eq!(var.index(2.5).unwrap(), 2);
-        assert!(var.index(5.0).is_err());
+        assert_eq!(var.index(0.0), 0);
+        assert_eq!(var.index(0.5), 0);
+        assert_eq!(var.index(1.0), 1);
+        assert_eq!(var.index(1.5), 1);
+        assert_eq!(var.index(2.0), 2);
+        assert_eq!(var.index(2.5), 2);
     }
 }

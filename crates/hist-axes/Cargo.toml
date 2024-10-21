@@ -9,3 +9,4 @@ readme = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+num-traits = { workspace = true }

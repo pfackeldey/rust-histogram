@@ -12,6 +12,7 @@
 pub mod hist {
     use anyhow::Result;
     use hist_axes::axis::Axis;
+    use hist_storages::Storage;
     use thiserror::Error;
 
     #[derive(Error, Debug)]
@@ -20,16 +21,17 @@ pub mod hist {
         AxesValuesMismatch { nvalues: usize, naxes: usize },
     }
 
-    pub trait Histogram {
-        fn get_axes(&self) -> &Vec<Box<dyn Axis>>;
+    // General histogram interface
+    pub trait Histogram<A: Axis> {
+        fn get_axes(&self) -> &Vec<&A>;
 
-        fn num_bins(&self) -> usize {
+        fn num_bins(&self, flow: bool) -> usize {
             // Assuming that the trait implementer will have a method or a way to provide axes
             let axes = self.get_axes();
-            axes.iter().map(|axis| axis.num_bins()).product()
+            axes.iter().map(|axis| axis.num_bins(flow)).product()
         }
 
-        fn index(&self, values: Vec<f64>) -> Result<Vec<usize>> {
+        fn index(&self, values: Vec<A::ValueType>) -> Result<Vec<usize>> {
             let axes = self.get_axes();
             if values.len() != axes.len() {
                 return Err(HistError::AxesValuesMismatch {
@@ -41,13 +43,13 @@ pub mod hist {
 
             let mut indices = Vec::new();
             for (axis, value) in axes.iter().zip(values.iter()) {
-                let idx = axis.index(*value)?;
+                let idx = axis.index(value.clone());
                 indices.push(idx);
             }
             Ok(indices)
         }
 
-        fn find_bin_index(&self, values: Vec<f64>) -> Result<usize> {
+        fn find_bin_index(&self, values: Vec<A::ValueType>) -> Result<usize> {
             let axes = self.get_axes();
             if values.len() != axes.len() {
                 return Err(HistError::AxesValuesMismatch {
@@ -59,14 +61,15 @@ pub mod hist {
 
             let mut flat_index = 0;
             for (axis, value) in axes.iter().zip(values.iter()) {
-                let idx = axis.index(*value)?;
-                flat_index = flat_index * axis.num_bins() + idx;
+                let idx = axis.index(value.clone());
+                // stride = axis.num_bins(true)
+                flat_index = flat_index * axis.num_bins(true) + idx;
             }
             Ok(flat_index)
         }
 
-        fn get_bin(&self, idx: usize) -> f64;
+        fn get_bin(&self, idx: usize) -> Storage;
 
-        fn fill(&mut self, values: Vec<f64>, weight: f64) -> Result<()>;
+        fn fill(&mut self, values: Vec<A::ValueType>, weight: f64) -> Result<()>;
     }
 }

@@ -1,65 +1,74 @@
 use crate::axis::{Axis, AxisError};
-use crate::bin::Bin;
+use crate::bin::Interval;
 use anyhow::Result;
+use num_traits::{Float, Num, NumCast, NumOps};
 
 #[derive(Debug)]
-pub struct Uniform {
-    pub name: String,
-    pub bins: Vec<Bin>,
-    pub low: f64,
-    pub high: f64,
-    pub step: f64,
+pub struct Uniform<V = f64> {
+    pub bins: Vec<Interval<V>>,
+    pub low: V,
+    pub high: V,
+    pub step: V,
     pub num: usize,
 }
 
-impl Uniform {
-    pub fn new(name: String, start: f64, stop: f64, num: usize) -> Self {
-        // TODO: add checks
-        let step = (stop - start) / num as f64;
+impl<V> Uniform<V>
+where
+    V: PartialOrd + Num + NumCast + NumOps + Copy,
+{
+    pub fn new(num: usize, start: V, stop: V) -> Result<Self>
+    where
+        V: Float,
+    {
+        let step = (stop - start) / V::from(num).ok_or(AxisError::InvalidNumberOfBins)?;
+        if step <= V::from(0.0).ok_or(AxisError::InvalidStepSize)? {
+            return Err(AxisError::InvalidStepSize.into());
+        }
         let mut bins = Vec::with_capacity(num);
         for i in 0..num {
-            let lo = start + i as f64 * step;
+            let lo = start + V::from(i).ok_or(AxisError::InvalidStepSize).unwrap() * step;
             let hi = lo + step;
-            bins.push(Bin { low: lo, high: hi });
+            bins.push(Interval::new(lo, hi));
         }
-        Self {
-            name,
+        Ok(Self {
             bins,
             low: start,
             high: stop,
             step,
             num,
-        }
+        })
     }
 }
 
-impl Axis for Uniform {
-    fn name(&self) -> &str {
-        &self.name
-    }
+impl<V> Axis for Uniform<V>
+where
+    V: PartialOrd + Num + NumCast + NumOps + Copy + Clone,
+{
+    type ValueType = V;
+    type BinType = Interval<V>;
 
-    fn bins(&self) -> &Vec<Bin> {
+    fn bins(&self) -> &Vec<Self::BinType> {
         &self.bins
     }
 
-    fn num_bins(&self) -> usize {
+    fn num_bins(&self, flow: bool) -> usize {
+        if flow {
+            // include underflow and overflow bins
+            return self.num + 2;
+        }
         self.num
     }
 
-    fn lower_bound(&self) -> f64 {
-        self.low
-    }
-
-    fn upper_bound(&self) -> f64 {
-        self.high
-    }
-
-    fn index(&self, value: f64) -> Result<usize> {
-        if value < self.low || value >= self.high {
-            return Err(AxisError::FailedToFindBinIndex.into());
+    fn index(&self, value: Self::ValueType) -> usize {
+        // bin layout: [bins, underflow, overflow]
+        match value {
+            v if v < self.low => self.underflow(),
+            v if v > self.high => self.overflow(),
+            _ => {
+                let index = (value - self.low) / self.step;
+                NumCast::from(index).unwrap()
+            }
         }
-        let idx = ((value - self.low) / self.step).floor() as usize;
-        Ok(idx)
     }
 }
 
@@ -69,13 +78,11 @@ mod tests {
 
     #[test]
     fn test_uniform_axis() {
-        let axis = Uniform::new("test".to_string(), 0.0, 1.0, 10);
-        assert_eq!(axis.num_bins(), 10);
-        assert_eq!(axis.lower_bound(), 0.0);
-        assert_eq!(axis.upper_bound(), 1.0);
-        assert_eq!(axis.index(0.0).unwrap(), 0);
-        assert_eq!(axis.index(0.1).unwrap(), 1);
-        assert_eq!(axis.index(0.9).unwrap(), 9);
-        assert!(axis.index(1.0).is_err());
+        let axis = Uniform::new(10, 0.0, 1.0).unwrap();
+        assert_eq!(axis.num_bins(false), 10);
+        assert_eq!(axis.num_bins(true), 12);
+        assert_eq!(axis.index(0.0), 0);
+        assert_eq!(axis.index(0.1), 1);
+        assert_eq!(axis.index(0.9), 9);
     }
 }

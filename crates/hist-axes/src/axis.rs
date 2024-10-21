@@ -1,16 +1,20 @@
-use anyhow::Result;
 use std::fmt::Debug;
 use thiserror::Error;
 
-use crate::bin::Bin;
+pub trait Axis {
+    // bin layout: [bins, underflow, overflow]
+    type BinType;
+    type ValueType: Clone;
 
-pub trait Axis: Debug {
-    fn name(&self) -> &str;
-    fn bins(&self) -> &Vec<Bin>;
-    fn num_bins(&self) -> usize;
-    fn lower_bound(&self) -> f64;
-    fn upper_bound(&self) -> f64;
-    fn index(&self, value: f64) -> Result<usize>;
+    fn bins(&self) -> &Vec<Self::BinType>;
+    fn num_bins(&self, flow: bool) -> usize;
+    fn index(&self, value: Self::ValueType) -> usize;
+    fn underflow(&self) -> usize {
+        self.num_bins(true) - 2
+    }
+    fn overflow(&self) -> usize {
+        self.num_bins(true) - 1
+    }
 }
 
 #[derive(Error, Debug)]
@@ -19,6 +23,8 @@ pub enum AxisError {
     InvalidNumberOfBins,
     #[error("axis step size should be non-zero and positive")]
     InvalidStepSize,
+    #[error("need to have at least two bin edges.")]
+    InvalidNumberOfBinEdges,
     #[error("failed to sort bins. The list of axis bin edges must be sortable.")]
     FailedToSortBins,
     #[error("failed to find bin index. The value is outside the axis range.")]

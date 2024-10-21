@@ -1,5 +1,5 @@
 [package]
-name = "hist-sparse"
+name = "hist-storages"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -8,6 +8,5 @@ readme = { workspace = true }
 
 [dependencies]
 hist-axes = { workspace = true }
-hist-storages = { workspace = true }
-hist = { workspace = true }
 anyhow = { workspace = true }
+thiserror = { workspace = true }

@@ -1,5 +1,45 @@
+use num_traits::{Num, NumCast, NumOps};
+
 #[derive(Debug)]
-pub struct Bin {
-    pub low: f64,
-    pub high: f64,
+pub struct Interval<V> {
+    pub low: V,
+    pub high: V,
 }
+
+impl<V> Interval<V>
+where
+    V: PartialOrd + Num + NumCast + NumOps + Copy,
+{
+    pub fn new(low: V, high: V) -> Self {
+        assert!(high > low, "high must be greater than low");
+        Self { low, high }
+    }
+
+    pub fn center(&self) -> V {
+        (self.low + self.high) / V::from(2.0).unwrap()
+    }
+
+    pub fn width(&self) -> V {
+        self.high - self.low
+    }
+}
+
+#[derive(Debug)]
+pub struct SingleValue<V> {
+    pub value: V,
+}
+
+impl<V> SingleValue<V> {
+    pub fn new(value: V) -> Self {
+        Self { value }
+    }
+}
+
+// pub enum BinType<V1, V2> {
+//     Float64Interval(Interval<f64>),
+//     Float32Interval(Interval<f32>),
+//     Int64Interval(Interval<i64>),
+//     Int32Interval(Interval<i32>),
+//     BoolSingleValue(SingleValue<bool>),
+//     StrSingleValue(SingleValue<String>),
+// }
