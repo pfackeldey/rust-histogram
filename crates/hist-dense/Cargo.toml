@@ -1,0 +1,12 @@
+[package]
+name = "hist-dense"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+hist-axes = { workspace = true }
+hist = { workspace = true }
+anyhow = { workspace = true }

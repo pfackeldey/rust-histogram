@@ -1,0 +1,11 @@
+[package]
+name = "hist-axes"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }

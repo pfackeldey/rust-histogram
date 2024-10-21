@@ -1,6 +1,19 @@
-[package]
-name = "histogram"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["crates/*"]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+authors = ["Peter Fackeldey"]
+edition = "2021"
+repository = "https://github.com/pfackeldey/rust-histogram"
+readme = "README.md"
+
+
+[workspace.dependencies]
+hist-axes = { path = "crates/hist-axes", version = "0.1.0" }
+hist-dense = { path = "crates/hist-dense", version = "0.1.0" }
+hist-sparse = { path = "crates/hist-sparse", version = "0.1.0" }
+hist = { path = "crates/hist", version = "0.1.0" }
+anyhow = "*"
+thiserror = "*"
