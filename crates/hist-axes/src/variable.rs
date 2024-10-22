@@ -1,18 +1,14 @@
 use crate::axis::{Axis, AxisError};
 use crate::bin::Interval;
 use anyhow::Result;
-use num_traits::{Num, NumCast, NumOps};
 
-#[derive(Debug)]
-pub struct Variable<V = f64> {
-    pub bins: Vec<Interval<V>>,
+#[derive(Debug, Clone)]
+pub struct Variable {
+    pub bins: Vec<Interval<f64>>,
 }
 
-impl<V> Variable<V>
-where
-    V: PartialOrd + Num + NumCast + Copy + Clone,
-{
-    pub fn new(edges: Vec<V>) -> Result<Self> {
+impl Variable {
+    pub fn new(edges: Vec<f64>) -> Result<Self> {
         if edges.len() < 2 {
             return Err(AxisError::InvalidNumberOfBinEdges.into());
         }
@@ -25,28 +21,8 @@ where
             .collect();
         Ok(Self { bins })
     }
-}
 
-impl<V> Axis for Variable<V>
-where
-    V: PartialOrd + Num + NumCast + NumOps + Copy,
-{
-    type ValueType = V;
-    type BinType = Interval<V>;
-
-    fn bins(&self) -> &Vec<Self::BinType> {
-        &self.bins
-    }
-
-    fn num_bins(&self, flow: bool) -> usize {
-        if flow {
-            // include underflow and overflow bins
-            return self.bins.len() + 2;
-        }
-        self.bins.len()
-    }
-
-    fn index(&self, value: Self::ValueType) -> usize {
+    pub fn index(&self, value: f64) -> usize {
         // find index with binary search
         // (this should be eytzinger layout for better cache performance)
         // bin layout: [bins, underflow, overflow]
@@ -66,6 +42,16 @@ where
                 })
                 .unwrap(),
         }
+    }
+}
+
+impl Axis for Variable {
+    fn num_bins(&self, flow: bool) -> usize {
+        if flow {
+            // include underflow and overflow bins
+            return self.bins.len() + 2;
+        }
+        self.bins.len()
     }
 }
 

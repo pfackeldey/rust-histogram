@@ -5,15 +5,15 @@ use hist_storages::{Storage, StorageType};
 
 // Holds the data as a Vec of filled bins
 #[derive(Debug)]
-pub struct SparseHist<'a, A: Axis> {
-    pub axes: Vec<&'a A>,
+pub struct SparseHist {
+    pub axes: Vec<Box<dyn Axis>>,
     pub data: Vec<Storage>,
     pub data_indices: Vec<usize>,
     pub storage: StorageType,
 }
 
-impl<'a, A: Axis> SparseHist<'a, A> {
-    pub fn new(axes: Vec<&'a A>, storage: StorageType) -> Self {
+impl SparseHist {
+    pub fn new(axes: Vec<Box<dyn Axis>>, storage: StorageType) -> Self {
         Self {
             axes,
             data: Vec::new(),         // keeps track of the values of filled bins
@@ -23,8 +23,8 @@ impl<'a, A: Axis> SparseHist<'a, A> {
     }
 }
 
-impl<'a, A: Axis> Histogram<A> for SparseHist<'a, A> {
-    fn get_axes(&self) -> &Vec<&A> {
+impl Histogram for SparseHist {
+    fn get_axes(&self) -> &Vec<Box<dyn Axis>> {
         &self.axes
     }
 
@@ -39,19 +39,19 @@ impl<'a, A: Axis> Histogram<A> for SparseHist<'a, A> {
         )
     }
 
-    fn fill(&mut self, values: Vec<A::ValueType>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: Vec<usize>, weight: f64) -> Result<()> {
         let axes = self.get_axes();
 
-        if values.len() != axes.len() {
+        if indices.len() != axes.len() {
             return Err(HistError::AxesValuesMismatch {
-                nvalues: values.len(),
+                nvalues: indices.len(),
                 naxes: axes.len(),
             }
             .into());
         }
 
         // Find the index of the bin for each axis
-        let bin_idx = self.find_bin_index(values)?;
+        let bin_idx = self.stride_index(indices)?;
 
         // Increment the bin by the weight
         // if the bin exists: increment the bin inplace
@@ -83,18 +83,24 @@ mod tests {
     #[test]
     fn test_sparsehist() {
         use hist::hist::Histogram;
+        use hist_axes::axis::Axis;
         use hist_axes::uniform::Uniform;
         use hist_storages::{Storage, StorageType};
 
         let axis1 = Uniform::new(10, 0.0, 10.0).unwrap();
         let axis2 = Uniform::new(10, 0.0, 10.0).unwrap();
 
-        let mut hist = super::SparseHist::new(vec![&axis1, &axis2], StorageType::Double);
+        let axes = vec![
+            Box::new(axis1.clone()) as Box<dyn Axis>,
+            Box::new(axis2.clone()) as Box<dyn Axis>,
+        ];
+
+        let mut hist = super::SparseHist::new(axes, StorageType::Double);
         assert_eq!(hist.data.len(), 0);
         assert_eq!(hist.data_indices.len(), 0);
 
-        let values = vec![0.5, 0.5];
-        hist.fill(values, 1.0).unwrap();
+        let where2fill = vec![axis1.index(0.5), axis2.index(0.5)];
+        hist.fill(where2fill, 1.0).unwrap();
         assert_eq!(hist.data.len(), 1);
         assert_eq!(hist.data_indices.len(), 1);
 

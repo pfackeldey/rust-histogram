@@ -1,14 +1,9 @@
 use std::fmt::Debug;
 use thiserror::Error;
 
-pub trait Axis {
+pub trait Axis: Debug {
     // bin layout: [bins, underflow, overflow]
-    type BinType;
-    type ValueType: Clone;
-
-    fn bins(&self) -> &Vec<Self::BinType>;
     fn num_bins(&self, flow: bool) -> usize;
-    fn index(&self, value: Self::ValueType) -> usize;
     fn underflow(&self) -> usize {
         self.num_bins(true) - 2
     }
@@ -29,4 +24,6 @@ pub enum AxisError {
     FailedToSortBins,
     #[error("failed to find bin index. The value is outside the axis range.")]
     FailedToFindBinIndex,
+    #[error("invalid value type for axis, can't be used for indexing.")]
+    InvalidValueType,
 }

@@ -1,32 +1,30 @@
+use std::fmt::{Debug, Formatter};
+
 use crate::axis::{Axis, AxisError};
 use crate::bin::Interval;
 use anyhow::Result;
-use num_traits::{Float, Num, NumCast, NumOps};
 
-#[derive(Debug)]
-pub struct Uniform<V = f64> {
-    pub bins: Vec<Interval<V>>,
-    pub low: V,
-    pub high: V,
-    pub step: V,
+#[derive(Clone)]
+pub struct Uniform {
+    pub bins: Vec<Interval<f64>>,
+    pub low: f64,
+    pub high: f64,
+    pub step: f64,
     pub num: usize,
 }
 
-impl<V> Uniform<V>
-where
-    V: PartialOrd + Num + NumCast + NumOps + Copy,
-{
-    pub fn new(num: usize, start: V, stop: V) -> Result<Self>
-    where
-        V: Float,
-    {
-        let step = (stop - start) / V::from(num).ok_or(AxisError::InvalidNumberOfBins)?;
-        if step <= V::from(0.0).ok_or(AxisError::InvalidStepSize)? {
+impl Uniform {
+    pub fn new(num: usize, start: f64, stop: f64) -> Result<Self> {
+        if num == 0 {
+            return Err(AxisError::InvalidNumberOfBins.into());
+        }
+        let step = (stop - start) / num as f64;
+        if step <= 0.0 {
             return Err(AxisError::InvalidStepSize.into());
         }
         let mut bins = Vec::with_capacity(num);
         for i in 0..num {
-            let lo = start + V::from(i).ok_or(AxisError::InvalidStepSize).unwrap() * step;
+            let lo = start + i as f64 * step;
             let hi = lo + step;
             bins.push(Interval::new(lo, hi));
         }
@@ -38,19 +36,20 @@ where
             num,
         })
     }
+
+    pub fn index(&self, value: f64) -> usize {
+        // bin layout: [bins, underflow, overflow]
+        if value < self.low {
+            self.underflow()
+        } else if value > self.high {
+            self.overflow()
+        } else {
+            ((value - self.low) / self.step).floor() as usize
+        }
+    }
 }
 
-impl<V> Axis for Uniform<V>
-where
-    V: PartialOrd + Num + NumCast + NumOps + Copy + Clone,
-{
-    type ValueType = V;
-    type BinType = Interval<V>;
-
-    fn bins(&self) -> &Vec<Self::BinType> {
-        &self.bins
-    }
-
+impl Axis for Uniform {
     fn num_bins(&self, flow: bool) -> usize {
         if flow {
             // include underflow and overflow bins
@@ -58,17 +57,17 @@ where
         }
         self.num
     }
+}
 
-    fn index(&self, value: Self::ValueType) -> usize {
-        // bin layout: [bins, underflow, overflow]
-        match value {
-            v if v < self.low => self.underflow(),
-            v if v > self.high => self.overflow(),
-            _ => {
-                let index = (value - self.low) / self.step;
-                NumCast::from(index).unwrap()
-            }
-        }
+impl Debug for Uniform {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Uniform({:#?}..{:#?}, #{:#?} bins)",
+            self.low,
+            self.high,
+            self.num_bins(false),
+        )
     }
 }
 

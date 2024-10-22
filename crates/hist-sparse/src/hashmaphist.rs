@@ -5,15 +5,14 @@ use hist_storages::{Storage, StorageType};
 use std::collections::HashMap;
 
 // Holds the data as a hashmap
-#[derive(Debug, Clone)]
-pub struct HashMapHist<'a, A: Axis> {
-    pub axes: Vec<&'a A>,
+pub struct HashMapHist {
+    pub axes: Vec<Box<dyn Axis>>,
     pub data: HashMap<usize, Storage>,
     pub storage: StorageType,
 }
 
-impl<'a, A: Axis> HashMapHist<'a, A> {
-    pub fn new(axes: Vec<&'a A>, storage: StorageType) -> Self {
+impl HashMapHist {
+    pub fn new(axes: Vec<Box<dyn Axis>>, storage: StorageType) -> Self {
         Self {
             axes,
             data: HashMap::new(),
@@ -22,35 +21,32 @@ impl<'a, A: Axis> HashMapHist<'a, A> {
     }
 }
 
-impl<'a, A: Axis> Histogram<A> for HashMapHist<'a, A> {
-    fn get_axes(&self) -> &Vec<&A> {
+impl Histogram for HashMapHist {
+    fn get_axes(&self) -> &Vec<Box<dyn Axis>> {
         &self.axes
     }
 
     fn get_bin(&self, idx: usize) -> Storage {
-        self.data
-            .get(&idx)
-            .cloned()
-            .unwrap_or_else(|| match self.storage {
-                StorageType::Double => Storage::Double(0.0),
-                StorageType::Int => Storage::Int(0),
-                StorageType::Weight => Storage::Weight((0.0, 0.0)),
-            })
+        self.data.get(&idx).cloned().unwrap_or(match self.storage {
+            StorageType::Double => Storage::Double(0.0),
+            StorageType::Int => Storage::Int(0),
+            StorageType::Weight => Storage::Weight((0.0, 0.0)),
+        })
     }
 
-    fn fill(&mut self, values: Vec<A::ValueType>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: Vec<usize>, weight: f64) -> Result<()> {
         let axes = self.get_axes();
 
-        if values.len() != axes.len() {
+        if indices.len() != axes.len() {
             return Err(HistError::AxesValuesMismatch {
-                nvalues: values.len(),
+                nvalues: indices.len(),
                 naxes: axes.len(),
             }
             .into());
         }
 
-        // Find the index of the bin for each axis
-        let bin_idx = self.find_bin_index(values)?;
+        // Find the stride index of the bin for each axis
+        let bin_idx = self.stride_index(indices)?;
 
         // Increment the bin by the weight
         // if the bin exists: increment the bin inplace
@@ -82,17 +78,22 @@ mod tests {
     #[test]
     fn test_hashmaphist() {
         use hist::hist::Histogram;
+        use hist_axes::axis::Axis;
         use hist_axes::uniform::Uniform;
         use hist_storages::{Storage, StorageType};
 
         let axis1 = Uniform::new(10, 0.0, 10.0).unwrap();
         let axis2 = Uniform::new(10, 0.0, 10.0).unwrap();
 
-        let mut hist = super::HashMapHist::new(vec![&axis1, &axis2], StorageType::Double);
+        let axes = vec![
+            Box::new(axis1.clone()) as Box<dyn Axis>,
+            Box::new(axis2.clone()) as Box<dyn Axis>,
+        ];
+        let mut hist = super::HashMapHist::new(axes, StorageType::Double);
         assert_eq!(hist.data.len(), 0);
 
-        let values = vec![0.5, 0.5];
-        hist.fill(values, 1.0).unwrap();
+        let where2fill = vec![axis1.index(0.5), axis2.index(0.5)];
+        hist.fill(where2fill, 1.0).unwrap();
         assert_eq!(hist.data.len(), 1);
 
         assert_eq!(hist.get_bin(0), Storage::Double(1.0));

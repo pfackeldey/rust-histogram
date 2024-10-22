@@ -1,6 +1,6 @@
 use num_traits::{Num, NumCast, NumOps};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Interval<V> {
     pub low: V,
     pub high: V,
@@ -24,7 +24,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SingleValue<V> {
     pub value: V,
 }
