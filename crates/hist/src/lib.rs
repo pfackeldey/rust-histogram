@@ -32,7 +32,7 @@ pub mod hist {
             axes.iter().map(|axis| axis.num_bins(flow)).product()
         }
 
-        fn stride_index(&self, indices: Vec<usize>) -> Result<usize> {
+        fn stride_index(&self, indices: &Vec<usize>) -> Result<usize> {
             let axes = self.get_axes();
             if indices.len() != axes.len() {
                 return Err(HistError::AxesValuesMismatch {
@@ -52,11 +52,11 @@ pub mod hist {
 
         fn get_bin(&self, idx: usize) -> Storage;
 
-        fn fill(&mut self, values: Vec<usize>, weight: f64) -> Result<()>;
+        fn fill(&mut self, values: &Vec<usize>, weight: f64) -> Result<()>;
 
-        fn fill_n(&mut self, values: Vec<Vec<usize>>, weights: Vec<f64>) -> Result<()> {
+        fn fill_n(&mut self, values: &Vec<Vec<usize>>, weights: &Vec<f64>) -> Result<()> {
             for (values, weight) in values.iter().zip(weights.iter()) {
-                self.fill(values.clone(), *weight)?;
+                self.fill(values, *weight)?;
             }
             Ok(())
         }

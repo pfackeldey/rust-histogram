@@ -40,7 +40,7 @@ impl Histogram for VecHist {
         self.data[idx].clone()
     }
 
-    fn fill(&mut self, indices: Vec<usize>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: &Vec<usize>, weight: f64) -> Result<()> {
         let axes = self.get_axes();
 
         if indices.len() != axes.len() {
@@ -117,16 +117,15 @@ mod tests {
 
         // Fill the histogram
         let where2fill = vec![uniform.index(0.0), cat.index("A".to_string())];
-        hist.fill(where2fill, 1.0).unwrap();
+        hist.fill(&where2fill, 1.0).unwrap();
 
         assert_eq!(hist.num_bins(false), 50);
         assert_eq!(hist.num_bins(true), 72);
         assert_eq!(hist.get_bin(0), Storage::Double(0.0));
 
         // Check the bin
-        let where2fill = vec![uniform.index(0.0), cat.index("A".to_string())];
         assert_eq!(
-            hist.get_bin(hist.stride_index(where2fill).unwrap()),
+            hist.get_bin(hist.stride_index(&where2fill).unwrap()),
             Storage::Double(1.0)
         );
     }

@@ -9,7 +9,6 @@ edition = "2021"
 repository = "https://github.com/pfackeldey/rust-histogram"
 readme = "README.md"
 
-
 [workspace.dependencies]
 hist-axes = { path = "crates/hist-axes", version = "0.1.0" }
 hist-dense = { path = "crates/hist-dense", version = "0.1.0" }

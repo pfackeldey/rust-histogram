@@ -34,7 +34,7 @@ impl Histogram for HashMapHist {
         })
     }
 
-    fn fill(&mut self, indices: Vec<usize>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: &Vec<usize>, weight: f64) -> Result<()> {
         let axes = self.get_axes();
 
         if indices.len() != axes.len() {
@@ -93,7 +93,7 @@ mod tests {
         assert_eq!(hist.data.len(), 0);
 
         let where2fill = vec![axis1.index(0.5), axis2.index(0.5)];
-        hist.fill(where2fill, 1.0).unwrap();
+        hist.fill(&where2fill, 1.0).unwrap();
         assert_eq!(hist.data.len(), 1);
 
         assert_eq!(hist.get_bin(0), Storage::Double(1.0));
