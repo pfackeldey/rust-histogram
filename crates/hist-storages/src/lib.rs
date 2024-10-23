@@ -7,11 +7,11 @@ pub enum StorageType {
     Weight,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Storage {
-    Double(f64),
-    Int(i64),
-    Weight((f64, f64)),
+    Double(f32),
+    Int(i32),
+    Weight((f32, f32)),
 }
 
 impl Add for Storage {

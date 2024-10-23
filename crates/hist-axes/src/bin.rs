@@ -34,12 +34,3 @@ impl<V> SingleValue<V> {
         Self { value }
     }
 }
-
-// pub enum BinType<V1, V2> {
-//     Float64Interval(Interval<f64>),
-//     Float32Interval(Interval<f32>),
-//     Int64Interval(Interval<i64>),
-//     Int32Interval(Interval<i32>),
-//     BoolSingleValue(SingleValue<bool>),
-//     StrSingleValue(SingleValue<String>),
-// }

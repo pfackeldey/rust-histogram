@@ -52,9 +52,9 @@ pub mod hist {
 
         fn get_bin(&self, idx: usize) -> Storage;
 
-        fn fill(&mut self, values: &Vec<usize>, weight: f64) -> Result<()>;
+        fn fill(&mut self, values: &Vec<usize>, weight: f32) -> Result<()>;
 
-        fn fill_n(&mut self, values: &Vec<Vec<usize>>, weights: &Vec<f64>) -> Result<()> {
+        fn fill_n(&mut self, values: &Vec<Vec<usize>>, weights: &Vec<f32>) -> Result<()> {
             for (values, weight) in values.iter().zip(weights.iter()) {
                 self.fill(values, *weight)?;
             }

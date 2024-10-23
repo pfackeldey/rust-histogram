@@ -39,7 +39,7 @@ impl Histogram for SparseHist {
         )
     }
 
-    fn fill(&mut self, indices: &Vec<usize>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: &Vec<usize>, weight: f32) -> Result<()> {
         let axes = self.get_axes();
 
         if indices.len() != axes.len() {
@@ -59,7 +59,7 @@ impl Histogram for SparseHist {
         if let Some(idx) = self.data_indices.iter().position(|&x| x == bin_idx) {
             match &mut self.data[idx] {
                 Storage::Double(val) => *val += weight,
-                Storage::Int(val) => *val += weight as i64,
+                Storage::Int(val) => *val += weight as i32,
                 Storage::Weight(val) => {
                     val.0 += weight;
                     val.1 += weight * weight;
@@ -69,7 +69,7 @@ impl Histogram for SparseHist {
             self.data_indices.push(bin_idx);
             match self.storage {
                 StorageType::Double => self.data.push(Storage::Double(weight)),
-                StorageType::Int => self.data.push(Storage::Int(weight as i64)),
+                StorageType::Int => self.data.push(Storage::Int(weight as i32)),
                 StorageType::Weight => self.data.push(Storage::Weight((weight, weight * weight))),
             }
         }

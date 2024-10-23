@@ -40,7 +40,7 @@ impl Histogram for VecHist {
         self.data[idx].clone()
     }
 
-    fn fill(&mut self, indices: &Vec<usize>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: &Vec<usize>, weight: f32) -> Result<()> {
         let axes = self.get_axes();
 
         if indices.len() != axes.len() {
@@ -56,7 +56,7 @@ impl Histogram for VecHist {
         let bin_idx = self.stride_index(indices)?;
         match self.storage {
             StorageType::Double => self.data[bin_idx] += Storage::Double(weight),
-            StorageType::Int => self.data[bin_idx] += Storage::Int(weight as i64),
+            StorageType::Int => self.data[bin_idx] += Storage::Int(weight as i32),
             StorageType::Weight => self.data[bin_idx] += Storage::Weight((weight, weight * weight)),
         }
 
@@ -76,11 +76,11 @@ impl Debug for VecHist {
         //     .iter()
         //     .map(|s| match s {
         //         Storage::Double(val) => *val,
-        //         Storage::Int(val) => *val as f64,
+        //         Storage::Int(val) => *val as f32,
         //         Storage::Weight((val, _)) => *val,
         //     })
-        //     .collect::<Vec<f64>>();
-        // let sum = primitive_bins.iter().sum::<f64>();
+        //     .collect::<Vec<f32>>();
+        // let sum = primitive_bins.iter().sum::<f32>();
         // write!(f, "\nBins (sumw={:?}): {:?}", sum, primitive_bins)
     }
 }

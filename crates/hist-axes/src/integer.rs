@@ -4,7 +4,7 @@ use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub struct Integer {
-    pub bins: Vec<SingleValue<i64>>,
+    pub bins: Vec<SingleValue<i32>>,
 }
 
 impl Integer {
@@ -12,7 +12,7 @@ impl Integer {
     // under-/overflow bin is always at index 0
     // bins are at indices 1..=num
     // This layout allows for growing the number of bins
-    pub fn new(bins: Vec<i64>) -> Result<Self> {
+    pub fn new(bins: Vec<i32>) -> Result<Self> {
         if bins.is_empty() {
             return Err(AxisError::InvalidNumberOfBins.into());
         }
@@ -29,7 +29,7 @@ impl Integer {
         Ok(Self { bins: single_bins })
     }
 
-    pub fn index(&self, value: i64) -> usize {
+    pub fn index(&self, value: i32) -> usize {
         match self.bins[1..].binary_search_by(|bin| bin.value.cmp(&value)) {
             Ok(index) => index + 1,
             Err(_) => self.overflow(),

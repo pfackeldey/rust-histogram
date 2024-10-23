@@ -4,11 +4,11 @@ use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub struct Variable {
-    pub bins: Vec<Interval<f64>>,
+    pub bins: Vec<Interval<f32>>,
 }
 
 impl Variable {
-    pub fn new(edges: Vec<f64>) -> Result<Self> {
+    pub fn new(edges: Vec<f32>) -> Result<Self> {
         if edges.len() < 2 {
             return Err(AxisError::InvalidNumberOfBinEdges.into());
         }
@@ -22,7 +22,7 @@ impl Variable {
         Ok(Self { bins })
     }
 
-    pub fn index(&self, value: f64) -> usize {
+    pub fn index(&self, value: f32) -> usize {
         // find index with binary search
         // (this should be eytzinger layout for better cache performance)
         // bin layout: [bins, underflow, overflow]
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn test_variable_axis() {
-        let edges: Vec<f64> = vec![0.0, 1.0, 2.0, 3.0];
+        let edges: Vec<f32> = vec![0.0, 1.0, 2.0, 3.0];
         let var = Variable::new(edges).unwrap();
 
         assert_eq!(var.num_bins(false), 3);

@@ -34,7 +34,7 @@ impl Histogram for HashMapHist {
         })
     }
 
-    fn fill(&mut self, indices: &Vec<usize>, weight: f64) -> Result<()> {
+    fn fill(&mut self, indices: &Vec<usize>, weight: f32) -> Result<()> {
         let axes = self.get_axes();
 
         if indices.len() != axes.len() {
@@ -55,7 +55,7 @@ impl Histogram for HashMapHist {
             Some(val) => {
                 match self.storage {
                     StorageType::Double => *val += Storage::Double(weight),
-                    StorageType::Int => *val += Storage::Int(weight as i64),
+                    StorageType::Int => *val += Storage::Int(weight as i32),
                     StorageType::Weight => *val += Storage::Weight((weight, weight * weight)),
                 }
                 Ok(())
@@ -63,7 +63,7 @@ impl Histogram for HashMapHist {
             None => {
                 let init_val = match self.storage {
                     StorageType::Double => Storage::Double(weight),
-                    StorageType::Int => Storage::Int(weight as i64),
+                    StorageType::Int => Storage::Int(weight as i32),
                     StorageType::Weight => Storage::Weight((weight, weight * weight)),
                 };
                 self.data.insert(bin_idx, init_val);

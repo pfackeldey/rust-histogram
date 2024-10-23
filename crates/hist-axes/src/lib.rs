@@ -23,8 +23,8 @@ pub trait AxisIndex<T> {
     fn index(&self, value: T) -> Result<usize>;
 }
 
-impl AxisIndex<f64> for Axes {
-    fn index(&self, value: f64) -> Result<usize> {
+impl AxisIndex<f32> for Axes {
+    fn index(&self, value: f32) -> Result<usize> {
         match self {
             Axes::Uniform(axis) => Ok(axis.index(value)),
             Axes::Variable(axis) => Ok(axis.index(value)),
@@ -33,8 +33,8 @@ impl AxisIndex<f64> for Axes {
     }
 }
 
-impl AxisIndex<i64> for Axes {
-    fn index(&self, value: i64) -> Result<usize> {
+impl AxisIndex<i32> for Axes {
+    fn index(&self, value: i32) -> Result<usize> {
         match self {
             Axes::Integer(axis) => Ok(axis.index(value)),
             _ => Err(AxisError::InvalidValueType.into()),

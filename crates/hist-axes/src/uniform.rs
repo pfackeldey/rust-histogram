@@ -6,25 +6,25 @@ use anyhow::Result;
 
 #[derive(Clone)]
 pub struct Uniform {
-    pub bins: Vec<Interval<f64>>,
-    pub low: f64,
-    pub high: f64,
-    pub step: f64,
+    pub bins: Vec<Interval<f32>>,
+    pub low: f32,
+    pub high: f32,
+    pub step: f32,
     pub num: usize,
 }
 
 impl Uniform {
-    pub fn new(num: usize, start: f64, stop: f64) -> Result<Self> {
+    pub fn new(num: usize, start: f32, stop: f32) -> Result<Self> {
         if num == 0 {
             return Err(AxisError::InvalidNumberOfBins.into());
         }
-        let step = (stop - start) / num as f64;
+        let step = (stop - start) / num as f32;
         if step <= 0.0 {
             return Err(AxisError::InvalidStepSize.into());
         }
         let mut bins = Vec::with_capacity(num);
         for i in 0..num {
-            let lo = start + i as f64 * step;
+            let lo = start + i as f32 * step;
             let hi = lo + step;
             bins.push(Interval::new(lo, hi));
         }
@@ -37,7 +37,7 @@ impl Uniform {
         })
     }
 
-    pub fn index(&self, value: f64) -> usize {
+    pub fn index(&self, value: f32) -> usize {
         // bin layout: [bins, underflow, overflow]
         if value < self.low {
             self.underflow()
