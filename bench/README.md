@@ -1,14 +1,28 @@
 # Run benchmark
 
+rust-histogram
+
 ```bash
 cargo build --release
 ./target/release/hist_bench
 ```
 
+boost-histogram
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install boost-histogram
+
+python script.py
+```
+
 ## Benchmark results for filling 10M entries with this implementation:
-- `VecHist` (fill 10M): 55.35ms
-- `SparseHist` (fill 10M): 12.71s
-- `HashMapHist` (fill 10M): 105.98ms
+
+- `VecHist` (fill 10M): 151.70ms
+- `SparseHist` (fill 10M): >10s
+- `HashMapHist` (fill 10M): 235.31ms
+- `boost-histogram` (fill 10M): 37.17 ms
 
 
 ## References:
